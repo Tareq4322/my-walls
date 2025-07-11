@@ -5,7 +5,7 @@ on:
   push:
     branches: [ main ]
     paths: 
-      - 'wallpapers/**'  # Adjust path to where you store images
+      - 'wallpapers/**'  # Watch the wallpapers folder
   workflow_dispatch:
 
 jobs:
@@ -21,6 +21,17 @@ jobs:
       with:
         node-version: '18'
         
+    - name: Debug - List files
+      run: |
+        echo "Files in root directory:"
+        ls -la
+        echo ""
+        echo "Files in wallpapers directory:"
+        ls -la wallpapers/ || echo "wallpapers directory not found"
+        echo ""
+        echo "Image files found in wallpapers:"
+        find ./wallpapers -type f \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" -o -iname "*.webp" -o -iname "*.gif" \) 2>/dev/null || echo "No image files found"
+        
     - name: Generate wallpaper.json
       run: |
         # Create the JSON generation script
@@ -28,24 +39,31 @@ jobs:
         const fs = require('fs');
         const path = require('path');
         
-        // Configuration
-        const WALLPAPER_DIR = './wallpapers'; // Adjust to your image directory
+        const WALLPAPER_DIR = './wallpapers'; // Your actual wallpapers folder
         const OUTPUT_FILE = './wallpaper.json';
-        const BASE_URL = 'https://raw.githubusercontent.com/Tareq4322/Frames/main/wallpapers/';
+        const BASE_URL = 'https://raw.githubusercontent.com/Tareq4322/my-walls/main/wallpapers/';
         
         // Supported image extensions
         const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
         
         function generateWallpaperJson() {
           try {
+            // Check if wallpapers directory exists
+            if (!fs.existsSync(WALLPAPER_DIR)) {
+              console.error('Wallpapers directory does not exist:', WALLPAPER_DIR);
+              process.exit(1);
+            }
+            
             // Read the wallpapers directory
             const files = fs.readdirSync(WALLPAPER_DIR);
             
-            // Filter image files
+            // Filter image files and exclude system files
             const imageFiles = files.filter(file => {
               const ext = path.extname(file).toLowerCase();
-              return IMAGE_EXTENSIONS.includes(ext);
+              return IMAGE_EXTENSIONS.includes(ext) && !file.startsWith('.');
             });
+            
+            console.log('Found image files:', imageFiles); // Debug log
             
             // Generate the JSON structure
             const wallpapers = imageFiles.map(file => ({
@@ -57,12 +75,14 @@ jobs:
             
             const jsonData = {
               wallpapers: wallpapers,
-              lastUpdated: new Date().toISOString()
+              lastUpdated: new Date().toISOString(),
+              totalCount: wallpapers.length
             };
             
             // Write to file
             fs.writeFileSync(OUTPUT_FILE, JSON.stringify(jsonData, null, 2));
             console.log(`Generated ${OUTPUT_FILE} with ${wallpapers.length} wallpapers`);
+            console.log('JSON content:', JSON.stringify(jsonData, null, 2)); // Debug log
             
           } catch (error) {
             console.error('Error generating wallpaper.json:', error);
@@ -78,7 +98,7 @@ jobs:
         
     - name: Commit and push changes
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
