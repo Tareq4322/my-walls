@@ -77,6 +77,8 @@ jobs:
         node generate_json.js
         
     - name: Commit and push changes
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
@@ -85,7 +87,7 @@ jobs:
         if [[ -n $(git status --porcelain) ]]; then
           git add wallpaper.json
           git commit -m "Auto-update wallpaper.json [skip ci]"
-          git push
+          git push https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git
         else
           echo "No changes to commit"
         fi
