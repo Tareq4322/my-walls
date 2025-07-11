@@ -96,6 +96,9 @@ jobs:
         # Run the script
         node generate_json.js
         
+        # Clean up the script file
+        rm generate_json.js
+        
     - name: Commit and push changes
       env:
         GITHUB_TOKEN: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
@@ -103,11 +106,13 @@ jobs:
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         
-        # Check if there are changes
-        if [[ -n $(git status --porcelain) ]]; then
-          git add wallpaper.json
-          git commit -m "Auto-update wallpaper.json [skip ci]"
-          git push https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git
-        else
+        # Add wallpapers.json (ignore the generate_json.js script)
+        git add wallpapers.json
+        
+        # Check if there are changes to commit
+        if git diff --staged --quiet; then
           echo "No changes to commit"
+        else
+          git commit -m "Auto-update wallpapers.json [skip ci]"
+          git push https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git
         fi
