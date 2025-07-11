@@ -65,9 +65,12 @@ jobs:
             
             console.log('Found image files:', imageFiles); // Debug log
             
-            // Generate the JSON structure to match your app's format
-            const wallpapers = imageFiles.map(file => ({
-              name: path.parse(file).name.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+            // Sort files by name to maintain consistent ordering
+            imageFiles.sort();
+            
+            // Generate the JSON structure with numbered names
+            const wallpapers = imageFiles.map((file, index) => ({
+              name: (index + 1).toString(), // Sequential numbers: "1", "2", "3", etc.
               url: BASE_URL + encodeURIComponent(file) // URL encode the filename
             }));
             
@@ -77,6 +80,7 @@ jobs:
             // Write to file
             fs.writeFileSync(OUTPUT_FILE, JSON.stringify(jsonData, null, 2));
             console.log(`Generated ${OUTPUT_FILE} with ${wallpapers.length} wallpapers`);
+            console.log('Wallpaper names assigned:', wallpapers.map(w => `${w.name}: ${decodeURIComponent(w.url.split('/').pop())}`).join(', '));
             console.log('JSON content:', JSON.stringify(jsonData, null, 2)); // Debug log
             
           } catch (error) {
