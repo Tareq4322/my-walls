@@ -1,0 +1,91 @@
+# .github/workflows/update-wallpaper-json.yml
+name: Update Wallpaper JSON
+
+on:
+  push:
+    branches: [ main ]
+    paths: 
+      - 'wallpapers/**'  # Adjust path to where you store images
+  workflow_dispatch:
+
+jobs:
+  update-json:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        
+    - name: Generate wallpaper.json
+      run: |
+        # Create the JSON generation script
+        cat > generate_json.js << 'EOF'
+        const fs = require('fs');
+        const path = require('path');
+        
+        // Configuration
+        const WALLPAPER_DIR = './wallpapers'; // Adjust to your image directory
+        const OUTPUT_FILE = './wallpaper.json';
+        const BASE_URL = 'https://raw.githubusercontent.com/Tareq4322/Frames/main/wallpapers/';
+        
+        // Supported image extensions
+        const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
+        
+        function generateWallpaperJson() {
+          try {
+            // Read the wallpapers directory
+            const files = fs.readdirSync(WALLPAPER_DIR);
+            
+            // Filter image files
+            const imageFiles = files.filter(file => {
+              const ext = path.extname(file).toLowerCase();
+              return IMAGE_EXTENSIONS.includes(ext);
+            });
+            
+            // Generate the JSON structure
+            const wallpapers = imageFiles.map(file => ({
+              id: path.parse(file).name,
+              url: BASE_URL + file,
+              name: path.parse(file).name.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+              category: "Auto-generated"
+            }));
+            
+            const jsonData = {
+              wallpapers: wallpapers,
+              lastUpdated: new Date().toISOString()
+            };
+            
+            // Write to file
+            fs.writeFileSync(OUTPUT_FILE, JSON.stringify(jsonData, null, 2));
+            console.log(`Generated ${OUTPUT_FILE} with ${wallpapers.length} wallpapers`);
+            
+          } catch (error) {
+            console.error('Error generating wallpaper.json:', error);
+            process.exit(1);
+          }
+        }
+        
+        generateWallpaperJson();
+        EOF
+        
+        # Run the script
+        node generate_json.js
+        
+    - name: Commit and push changes
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        
+        # Check if there are changes
+        if [[ -n $(git status --porcelain) ]]; then
+          git add wallpaper.json
+          git commit -m "Auto-update wallpaper.json [skip ci]"
+          git push
+        else
+          echo "No changes to commit"
+        fi
