@@ -40,7 +40,7 @@ jobs:
         const path = require('path');
         
         const WALLPAPER_DIR = './wallpapers'; // Your actual wallpapers folder
-        const OUTPUT_FILE = './wallpaper.json';
+        const OUTPUT_FILE = './wallpapers.json'; // Changed to wallpapers.json (plural)
         const BASE_URL = 'https://raw.githubusercontent.com/Tareq4322/my-walls/main/wallpapers/';
         
         // Supported image extensions
