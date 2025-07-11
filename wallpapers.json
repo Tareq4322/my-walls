@@ -1,30 +1,18 @@
-{
-  "wallpapers": [
-    {
-      "id": "5a8e06f664d51c8e64d025ffdd374c82",
-      "url": "https://raw.githubusercontent.com/Tareq4322/my-walls/main/wallpapers/5a8e06f664d51c8e64d025ffdd374c82.jpg",
-      "name": "5a8e06f664d51c8e64d025ffdd374c82",
-      "category": "Auto-generated"
-    },
-    {
-      "id": "70a87bcae571131ff3d75aadbf438c63",
-      "url": "https://raw.githubusercontent.com/Tareq4322/my-walls/main/wallpapers/70a87bcae571131ff3d75aadbf438c63.jpg",
-      "name": "70a87bcae571131ff3d75aadbf438c63",
-      "category": "Auto-generated"
-    },
-    {
-      "id": "d96acf93021ce93613eff30f32f38325",
-      "url": "https://raw.githubusercontent.com/Tareq4322/my-walls/main/wallpapers/d96acf93021ce93613eff30f32f38325.jpg",
-      "name": "D96acf93021ce93613eff30f32f38325",
-      "category": "Auto-generated"
-    },
-    {
-      "id": "fly all day with you",
-      "url": "https://raw.githubusercontent.com/Tareq4322/my-walls/main/wallpapers/fly all day with you.jpg",
-      "name": "Fly All Day With You",
-      "category": "Auto-generated"
-    }
-  ],
-  "lastUpdated": "2025-07-11T18:50:45.901Z",
-  "totalCount": 4
-}
+[
+  {
+    "name": "5a8e06f664d51c8e64d025ffdd374c82",
+    "url": "https://raw.githubusercontent.com/Tareq4322/my-walls/main/wallpapers/5a8e06f664d51c8e64d025ffdd374c82.jpg"
+  },
+  {
+    "name": "70a87bcae571131ff3d75aadbf438c63",
+    "url": "https://raw.githubusercontent.com/Tareq4322/my-walls/main/wallpapers/70a87bcae571131ff3d75aadbf438c63.jpg"
+  },
+  {
+    "name": "D96acf93021ce93613eff30f32f38325",
+    "url": "https://raw.githubusercontent.com/Tareq4322/my-walls/main/wallpapers/d96acf93021ce93613eff30f32f38325.jpg"
+  },
+  {
+    "name": "Fly All Day With You",
+    "url": "https://raw.githubusercontent.com/Tareq4322/my-walls/main/wallpapers/fly%20all%20day%20with%20you.jpg"
+  }
+]
