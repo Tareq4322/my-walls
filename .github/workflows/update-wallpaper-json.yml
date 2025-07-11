@@ -15,6 +15,8 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
+      with:
+        fetch-depth: 0  # Fetch full history for accurate git log
       
     - name: Set up Node.js
       uses: actions/setup-node@v3
@@ -38,6 +40,7 @@ jobs:
         cat > generate_json.js << 'EOF'
         const fs = require('fs');
         const path = require('path');
+        const { execSync } = require('child_process');
         
         const WALLPAPER_DIR = './wallpapers'; // Your actual wallpapers folder
         const OUTPUT_FILE = './wallpapers.json'; // Changed to wallpapers.json (plural)
@@ -71,11 +74,10 @@ jobs:
             for (const file of imageFiles) {
               try {
                 // Get the first commit date when this file was added to Git
-                const { execSync } = require('child_process');
                 const gitCommand = `git log --follow --format="%ct" --diff-filter=A -- "wallpapers/${file}"`;
                 const result = execSync(gitCommand, { encoding: 'utf8' }).trim();
                 
-                // Get the first (oldest) commit timestamp
+                // Get the first (oldest) commit timestamp for this file
                 const timestamps = result.split('\n').filter(t => t.trim());
                 const firstCommitTimestamp = timestamps[timestamps.length - 1]; // Last in the list is the first commit
                 
@@ -104,17 +106,18 @@ jobs:
               }
             }
             
-            // Sort by upload date (oldest first)
-            filesWithUploadDate.sort((a, b) => a.uploadDate - b.uploadDate);
+            // Sort by upload date (NEWEST FIRST) - This is the key change!
+            filesWithUploadDate.sort((a, b) => b.uploadDate - a.uploadDate);
             
-            console.log('Files sorted by actual upload date:');
+            console.log('Files sorted by upload date (newest first):');
             filesWithUploadDate.forEach((file, index) => {
               console.log(`${index + 1}. ${file.name} (uploaded: ${file.uploadDate.toISOString()})`);
             });
             
             // Generate the JSON structure with numbered names based on upload order
+            // Now the newest uploads will get the highest numbers
             const wallpapers = filesWithUploadDate.map((file, index) => ({
-              name: `No.${index + 1}`, // "No.1", "No.2", "No.3", etc.
+              name: `No.${index + 1}`, // "No.1" = newest, "No.2" = second newest, etc.
               url: BASE_URL + encodeURIComponent(file.name) // URL encode the filename
             }));
             
@@ -124,7 +127,7 @@ jobs:
             // Write to file
             fs.writeFileSync(OUTPUT_FILE, JSON.stringify(jsonData, null, 2));
             console.log(`Generated ${OUTPUT_FILE} with ${wallpapers.length} wallpapers`);
-            console.log('Final numbering by upload date:', wallpapers.map(w => `${w.name}: ${decodeURIComponent(w.url.split('/').pop())}`).join(', '));
+            console.log('Final numbering (newest = highest number):', wallpapers.map(w => `${w.name}: ${decodeURIComponent(w.url.split('/').pop())}`).join(', '));
             console.log('JSON content:', JSON.stringify(jsonData, null, 2)); // Debug log
             
           } catch (error) {
@@ -138,6 +141,9 @@ jobs:
         
         # Run the script
         node generate_json.js
+        
+        # Clean up the script file
+        rm generate_json.js
         
     - name: Commit and push changes
       env:
