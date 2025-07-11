@@ -115,9 +115,9 @@ jobs:
             });
             
             // Generate the JSON structure with numbered names based on upload order
-            // Now the newest uploads will get the highest numbers
+            // Keep newest first in array, but give it the highest number
             const wallpapers = filesWithUploadDate.map((file, index) => ({
-              name: `No.${index + 1}`, // "No.1" = newest, "No.2" = second newest, etc.
+              name: `No.${filesWithUploadDate.length - index}`, // Reverse numbering: newest gets highest number
               url: BASE_URL + encodeURIComponent(file.name) // URL encode the filename
             }));
             
