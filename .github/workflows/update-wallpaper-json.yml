@@ -65,32 +65,55 @@ jobs:
             
             console.log('Found image files:', imageFiles); // Debug log
             
-            // Get file stats and sort by creation time (oldest first)
-            const filesWithStats = imageFiles.map(file => {
-              const filePath = path.join(WALLPAPER_DIR, file);
-              const stats = fs.statSync(filePath);
-              return {
-                name: file,
-                birthtime: stats.birthtime, // File creation time
-                mtime: stats.mtime // File modification time
-              };
-            });
+            // Get the upload date for each file from Git history
+            const filesWithUploadDate = [];
             
-            // Sort by creation time (oldest first) - this ensures consistent numbering
-            // Use mtime as fallback if birthtime is not reliable
-            filesWithStats.sort((a, b) => {
-              const timeA = a.birthtime || a.mtime;
-              const timeB = b.birthtime || b.mtime;
-              return timeA - timeB;
-            });
+            for (const file of imageFiles) {
+              try {
+                // Get the first commit date when this file was added to Git
+                const { execSync } = require('child_process');
+                const gitCommand = `git log --follow --format="%ct" --diff-filter=A -- "wallpapers/${file}"`;
+                const result = execSync(gitCommand, { encoding: 'utf8' }).trim();
+                
+                // Get the first (oldest) commit timestamp
+                const timestamps = result.split('\n').filter(t => t.trim());
+                const firstCommitTimestamp = timestamps[timestamps.length - 1]; // Last in the list is the first commit
+                
+                if (firstCommitTimestamp) {
+                  const uploadDate = new Date(parseInt(firstCommitTimestamp) * 1000);
+                  filesWithUploadDate.push({
+                    name: file,
+                    uploadDate: uploadDate
+                  });
+                  console.log(`${file} was uploaded on: ${uploadDate.toISOString()}`);
+                } else {
+                  // If no git history found, use current date (newly added files)
+                  const currentDate = new Date();
+                  filesWithUploadDate.push({
+                    name: file,
+                    uploadDate: currentDate
+                  });
+                  console.log(`${file} has no git history, treating as new upload: ${currentDate.toISOString()}`);
+                }
+              } catch (error) {
+                console.log(`Error getting git history for ${file}, treating as new upload`);
+                filesWithUploadDate.push({
+                  name: file,
+                  uploadDate: new Date()
+                });
+              }
+            }
             
-            console.log('Files sorted by upload time:');
-            filesWithStats.forEach((file, index) => {
-              console.log(`${index + 1}. ${file.name} (uploaded: ${file.birthtime || file.mtime})`);
+            // Sort by upload date (oldest first)
+            filesWithUploadDate.sort((a, b) => a.uploadDate - b.uploadDate);
+            
+            console.log('Files sorted by actual upload date:');
+            filesWithUploadDate.forEach((file, index) => {
+              console.log(`${index + 1}. ${file.name} (uploaded: ${file.uploadDate.toISOString()})`);
             });
             
             // Generate the JSON structure with numbered names based on upload order
-            const wallpapers = filesWithStats.map((file, index) => ({
+            const wallpapers = filesWithUploadDate.map((file, index) => ({
               name: `No.${index + 1}`, // "No.1", "No.2", "No.3", etc.
               url: BASE_URL + encodeURIComponent(file.name) // URL encode the filename
             }));
@@ -101,7 +124,7 @@ jobs:
             // Write to file
             fs.writeFileSync(OUTPUT_FILE, JSON.stringify(jsonData, null, 2));
             console.log(`Generated ${OUTPUT_FILE} with ${wallpapers.length} wallpapers`);
-            console.log('Final numbering:', wallpapers.map(w => `${w.name}: ${decodeURIComponent(w.url.split('/').pop())}`).join(', '));
+            console.log('Final numbering by upload date:', wallpapers.map(w => `${w.name}: ${decodeURIComponent(w.url.split('/').pop())}`).join(', '));
             console.log('JSON content:', JSON.stringify(jsonData, null, 2)); // Debug log
             
           } catch (error) {
