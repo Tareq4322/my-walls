@@ -65,13 +65,34 @@ jobs:
             
             console.log('Found image files:', imageFiles); // Debug log
             
-            // Sort files by name to maintain consistent ordering
-            imageFiles.sort();
+            // Get file stats and sort by creation time (oldest first)
+            const filesWithStats = imageFiles.map(file => {
+              const filePath = path.join(WALLPAPER_DIR, file);
+              const stats = fs.statSync(filePath);
+              return {
+                name: file,
+                birthtime: stats.birthtime, // File creation time
+                mtime: stats.mtime // File modification time
+              };
+            });
             
-            // Generate the JSON structure with numbered names
-            const wallpapers = imageFiles.map((file, index) => ({
-              name: (index + 1).toString(), // Sequential numbers: "1", "2", "3", etc.
-              url: BASE_URL + encodeURIComponent(file) // URL encode the filename
+            // Sort by creation time (oldest first) - this ensures consistent numbering
+            // Use mtime as fallback if birthtime is not reliable
+            filesWithStats.sort((a, b) => {
+              const timeA = a.birthtime || a.mtime;
+              const timeB = b.birthtime || b.mtime;
+              return timeA - timeB;
+            });
+            
+            console.log('Files sorted by upload time:');
+            filesWithStats.forEach((file, index) => {
+              console.log(`${index + 1}. ${file.name} (uploaded: ${file.birthtime || file.mtime})`);
+            });
+            
+            // Generate the JSON structure with numbered names based on upload order
+            const wallpapers = filesWithStats.map((file, index) => ({
+              name: `No.${index + 1}`, // "No.1", "No.2", "No.3", etc.
+              url: BASE_URL + encodeURIComponent(file.name) // URL encode the filename
             }));
             
             // Your app expects a simple array, not an object
@@ -80,7 +101,7 @@ jobs:
             // Write to file
             fs.writeFileSync(OUTPUT_FILE, JSON.stringify(jsonData, null, 2));
             console.log(`Generated ${OUTPUT_FILE} with ${wallpapers.length} wallpapers`);
-            console.log('Wallpaper names assigned:', wallpapers.map(w => `${w.name}: ${decodeURIComponent(w.url.split('/').pop())}`).join(', '));
+            console.log('Final numbering:', wallpapers.map(w => `${w.name}: ${decodeURIComponent(w.url.split('/').pop())}`).join(', '));
             console.log('JSON content:', JSON.stringify(jsonData, null, 2)); // Debug log
             
           } catch (error) {
