@@ -65,19 +65,14 @@ jobs:
             
             console.log('Found image files:', imageFiles); // Debug log
             
-            // Generate the JSON structure
+            // Generate the JSON structure to match your app's format
             const wallpapers = imageFiles.map(file => ({
-              id: path.parse(file).name,
-              url: BASE_URL + file,
               name: path.parse(file).name.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-              category: "Auto-generated"
+              url: BASE_URL + encodeURIComponent(file) // URL encode the filename
             }));
             
-            const jsonData = {
-              wallpapers: wallpapers,
-              lastUpdated: new Date().toISOString(),
-              totalCount: wallpapers.length
-            };
+            // Your app expects a simple array, not an object
+            const jsonData = wallpapers;
             
             // Write to file
             fs.writeFileSync(OUTPUT_FILE, JSON.stringify(jsonData, null, 2));
@@ -95,9 +90,6 @@ jobs:
         
         # Run the script
         node generate_json.js
-        
-        # Clean up the script file
-        rm generate_json.js
         
     - name: Commit and push changes
       env:
